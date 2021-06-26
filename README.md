@@ -4,7 +4,7 @@ Status Socket is a plugin that sends player data to a server api. Possible uses 
 
 
 
-Example Response every Tick: 
+Player Data Response(every tick): 
 ```Json
 {
   "playerName": "DStat",
@@ -239,3 +239,17 @@ Example Response every Tick:
   }
 }
 ```
+
+Animation Data Response(on target animation):
+```Json
+{"playerName":"DStat","targetName":"Guard","targetId":3010,"attackType":"MELEE","interactionId":419}
+```
+
+Hitsplat Data Response(on target hitsplat):
+```Json
+{"playerName":"DStat","damage":0,"targetName":"Guard","targetId":3010}
+```
+
+
+
+
