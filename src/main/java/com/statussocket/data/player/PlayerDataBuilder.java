@@ -1,18 +1,33 @@
 package com.statussocket.data.player;
 
+import com.statussocket.models.AnimationData;
+import com.statussocket.models.EquipmentData;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.game.ItemManager;
+import net.runelite.http.api.item.ItemEquipmentStats;
+import net.runelite.http.api.item.ItemStats;
 
 public class PlayerDataBuilder
 {
 
 	private Client client;
+	private ItemManager itemManager;
+
+	private String targetName;
+	private int targetId;
+
+
+
 	private PlayerDataPacket pdp;
 
-	public PlayerDataBuilder(Client client)
+	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName, int targetId)
 	{
 		this.client = client;
+		this.itemManager = itemManager;
+		this.targetName = targetName;
+		this.targetId = targetId;
 		this.pdp = null;
 	}
 
@@ -86,10 +101,57 @@ public class PlayerDataBuilder
 		{
 			if (items[i] != null && items[i].getId() > 0)
 			{
-				pdp.equipment[index] = new EquipmentPacket(i, items[i]);
+				// First, attempt to see if the item has a match in EquipmentData, to use a "common" name for some items with duplicates
+				// If it doesn't have a match, just use the actual item's name.
+				EquipmentData itemData = EquipmentData.getEquipmentDataFor(items[i].getId());
+				String itemName = itemData != null ? itemData.name() : itemManager.getItemComposition(items[i].getId()).getName();
+
+				pdp.equipment[index] = new EquipmentPacket(i, items[i], itemName);
 				index++;
 			}
 		}
+	}
+
+	// this has to be called AFTER loadEquipment, so we can access pdp.equipment
+	private void loadEquipmentStats()
+	{
+		if (pdp.equipment.length < 1)
+		{
+			pdp.equipmentStats = new EquipmentStatsPacket();
+			return;
+		}
+
+		ItemEquipmentStats[] itemEquipmentStats = new ItemEquipmentStats[pdp.equipment.length];
+		for (int i = 0; i < pdp.equipment.length; i++)
+		{
+			// first, directly lookup the equipment's itemId for stats. This could fail if it is a weird "copy" of an item,
+			// such as an LMS version or a charged version.
+			int itemId = pdp.equipment[i].id;
+			ItemStats itemStats = itemManager.getItemStats(itemId, false);
+
+			// if that failed, then use EquipmentData to potentially get the "real" item's match.
+			if (itemStats == null)
+			{
+				EquipmentData itemData = EquipmentData.getEquipmentDataFor(itemId);
+				if (itemData != null)
+				{
+					itemId = itemData.getItemId();
+					itemStats = itemManager.getItemStats(itemId, false);
+				}
+			}
+
+			if (itemStats != null)
+			{
+				itemEquipmentStats[i] = itemStats.getEquipment();
+			}
+			else
+			{
+				itemEquipmentStats[i] = null; // NULLs will have to be skipped in EquipmentStatsPacket in case stats aren't found.
+			}
+
+		}
+
+		pdp.equipmentStats = new EquipmentStatsPacket(itemEquipmentStats);
 	}
 
 	private void loadSkills()
@@ -164,6 +226,18 @@ public class PlayerDataBuilder
 
 	}
 
+	private void loadAttack()
+	{
+		pdp.attack = new AttackPacket();
+
+		pdp.attack.playerName = client.getLocalPlayer().getName();
+
+		pdp.attack.targetName = targetName;
+		pdp.attack.targetId = targetId;
+
+		pdp.attack.animationData = AnimationData.dataForAnimation(client.getLocalPlayer().getAnimation());
+	}
+
 	public PlayerDataPacket build()
 	{
 		if (pdp == null)
@@ -176,10 +250,11 @@ public class PlayerDataBuilder
 
 			loadInventory();
 			loadEquipment();
+			loadEquipmentStats();
 			loadSkills();
 			loadPrayers();
 			loadLocation();
-
+			loadAttack();
 		}
 
 		return pdp;
