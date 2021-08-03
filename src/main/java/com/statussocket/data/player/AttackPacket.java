@@ -16,11 +16,9 @@ public class AttackPacket
 	public int targetId;
 
 	// The animation data about the attack the player used. See @AnimationData
-	// intent is to send all its properties to the server, not just the enum name.
-	public AnimationData animationData;
-	//public String attackType;
-
-	// The animation id the player used to launch the attack. - this is now included within animationData
-	//public int interactionId;
-
+	public String animationName;
+	public int animationId;
+	public boolean animationIsSpecial;
+	public String animationAttackStyle;
+	public int animationBaseSpellDmg;
 }

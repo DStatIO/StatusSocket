@@ -129,7 +129,7 @@ public class StatusSocketPlugin extends Plugin
 			return;
 		}
 
-		// delay animation processing/sending, since we will also want to use equipment data for deserved
+		// delay animation processing, since we will also want to use equipment data for deserved
 		// damage, and equipment updates are loaded shortly after the animation updates.
 		// without the invokeLater, equipped gear would be 1 tick behind the animation.
 		clientThread.invokeLater(() ->

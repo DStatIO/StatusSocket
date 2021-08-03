@@ -45,7 +45,6 @@ public enum EquipmentData
 	MAGIC_SHORTBOW_I(ItemID.MAGIC_SHORTBOW_I),
 	TOXIC_BLOWPIPE(ItemID.TOXIC_BLOWPIPE),
 	VOLATILE_NIGHTMARE_STAFF(ItemID.VOLATILE_NIGHTMARE_STAFF),
-	//CRAWS_BOW(22550), // ammo bonus is built into weapon so we don't need to include it
 	SMOKE_BATTLESTAFF(ItemID.SMOKE_BATTLESTAFF),
 	TOME_OF_FIRE(ItemID.TOME_OF_FIRE), // (charged tome)
 	VOID_MAGE_HELM(ItemID.VOID_MAGE_HELM),
@@ -155,6 +154,7 @@ public enum EquipmentData
 		}
 	}
 
+	// this was used for dps calcs so probably won't be used here. Code may still be useful.
 	public enum VoidStyle
 	{
 		VOID_MELEE(1.1, 1.1),

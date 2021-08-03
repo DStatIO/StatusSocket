@@ -235,7 +235,12 @@ public class PlayerDataBuilder
 		pdp.attack.targetName = targetName;
 		pdp.attack.targetId = targetId;
 
-		pdp.attack.animationData = AnimationData.dataForAnimation(client.getLocalPlayer().getAnimation());
+		AnimationData animationData = AnimationData.dataForAnimation(client.getLocalPlayer().getAnimation());
+		pdp.attack.animationName = animationData.name();
+		pdp.attack.animationId = animationData.getAnimationId();
+		pdp.attack.animationIsSpecial = animationData.isSpecial();
+		pdp.attack.animationAttackStyle = animationData.getAttackStyle().name();
+		pdp.attack.animationBaseSpellDmg = animationData.getBaseSpellDamage();
 	}
 
 	public PlayerDataPacket build()

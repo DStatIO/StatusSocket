@@ -36,6 +36,7 @@ import net.runelite.api.SpriteID;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@Getter
 public enum AnimationData
 {
 	// MELEE
@@ -122,9 +123,9 @@ public enum AnimationData
 	private static final Map<Integer, AnimationData> DATA;
 
 	int animationId;
-	public boolean isSpecial;
-	public AttackStyle attackStyle;
-	public int baseSpellDamage;
+	boolean isSpecial;
+	AttackStyle attackStyle;
+	int baseSpellDamage;
 
 	// Simple animation data constructor for all melee and range attacks
 	AnimationData(int animationId, AttackStyle attackStyle)
