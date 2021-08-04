@@ -7,6 +7,9 @@ public class PlayerDataPacket
 	public int runEnergy;
 	public int specialAttack;
 
+	public AttackPacket attack;
+
+	public EquipmentStatsPacket equipmentStats;
 	public EquipmentPacket[] equipment;
 	public InventoryPacket[] inventory;
 

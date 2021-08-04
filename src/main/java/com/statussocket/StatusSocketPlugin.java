@@ -1,25 +1,23 @@
 package com.statussocket;
 
 import com.google.inject.Provides;
-import com.statussocket.data.attack.AttackType;
+import com.statussocket.models.AnimationData;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.AnimationChanged;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import okhttp3.OkHttpClient;
-
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
 @PluginDescriptor(
@@ -42,20 +40,15 @@ public class StatusSocketPlugin extends Plugin
 	@Inject
 	private StatusSocketConfig config;
 
+	@Inject
+	private ClientThread clientThread;
+
+	@Inject
+	private ItemManager itemManager;
+
 	private OkHttpClient okClient = new OkHttpClient();
 
 	private StatusSocketClient slc;
-
-	private final List<Integer> MELEE_ATTACKS = Arrays.asList(376, 381, 386, 390, 393, 393, 395, 400,
-		401, 406, 407, 414, 419, 422, 423, 428, 429, 440, 1058, 1060, 1062, 1378, 1658, 1665, 1667,
-		2066, 2067, 2078, 2661, 3297, 3298, 3852, 5865, 7004, 7045, 7054, 7514, 7515, 7516, 7638,
-		7639, 7640, 7641, 7642, 7643, 7644, 7645, 8056, 8145);
-
-	private final List<Integer> RANGE_ATTACKS = Arrays.asList(426, 929, 1074, 4230, 5061, 6600, 7218,
-		7521, 7552, 7555, 7617, 8194, 8195, 8292);
-
-	private final List<Integer> MAGE_ATTACKS = Arrays.asList(710, 711, 1161, 1162, 1167, 7855, 1978,
-		1979, 8532);
 
 	@Provides
 	StatusSocketConfig provideConfig(final ConfigManager configManager)
@@ -66,7 +59,7 @@ public class StatusSocketPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		slc = new StatusSocketClient(client, config, okClient);
+		slc = new StatusSocketClient(client, itemManager, config, okClient);
 	}
 
 
@@ -89,13 +82,6 @@ public class StatusSocketPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onGameTick(GameTick event)
-	{
-		// Update the status every game tick.
-		slc.sendLog();
-	}
-
-	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
 		// Player does damage to another entity (either NPC or player).
@@ -111,54 +97,52 @@ public class StatusSocketPlugin extends Plugin
 		if (actor instanceof Player)
 		{
 			Player target = (Player) actor;
-			slc.sendHitsplat(hitsplat.getAmount(), target.getName(), -1);
-		}
-		else if (actor instanceof NPC)
-		{
-			NPC target = (NPC) actor;
-			slc.sendHitsplat(hitsplat.getAmount(), target.getName(), target.getId());
+			slc.sendHitsplat(hitsplat.getAmount(), target.getName());
 		}
 	}
 
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		// Player does an animation targetting another entity.
+		// Player does an animation targeting another player, or gets targeted by a player.
 		Player player = client.getLocalPlayer();
 		Actor actor = event.getActor();
 
-		if (player == null || actor == null || player != actor)
+		if (player == null || !(actor instanceof Player))
 		{
 			return;
 		}
 
-		Actor target = player.getInteracting();
-		if (target == null)
+		Actor target = actor.getInteracting();
+		if (!(target instanceof Player))
 		{
 			return;
 		}
 
-		int animationId = player.getAnimation();
+		int animationId = actor.getAnimation();
 		if (animationId == -1)
 		{
 			return;
 		}
 
-		int targetId = (target instanceof NPC) ? ((NPC) target).getId() : -1;
-
-		if (MELEE_ATTACKS.contains(animationId))
+		AnimationData animationData = AnimationData.fromId(animationId);
+		if (animationData == null) // disregard non-combat or unknown animations
 		{
-			slc.sendAttack(target.getName(), targetId, AttackType.MELEE, animationId);
+			return;
 		}
 
-		if (RANGE_ATTACKS.contains(event.getActor().getAnimation()))
-		{
-			slc.sendAttack(target.getName(), targetId, AttackType.RANGED, animationId);
-		}
+		// if the event actor is the player, then we're attacking.
+		// otherwise, the player is being attacked. so the target attacker is the event actor
+		boolean isAttacking = actor == player;
+		String targetName = (actor == player) ? target.getName() : actor.getName();
 
-		if (MAGE_ATTACKS.contains(event.getActor().getAnimation()))
+		// delay animation processing, since we will also want to use equipment data for deserved
+		// damage, and equipment updates are loaded shortly after the animation updates.
+		// without the invokeLater, equipped gear would be 1 tick behind the animation.
+		clientThread.invokeLater(() ->
 		{
-			slc.sendAttack(target.getName(), targetId, AttackType.MAGIC, animationId);
-		}
+			// send full log including attack/animation data
+			slc.sendLog(targetName, isAttacking);
+		});
 	}
 }

@@ -16,9 +16,6 @@ public class HitsplatBuilder
 	@Setter(AccessLevel.PUBLIC)
 	private String targetName;
 
-	@Setter(AccessLevel.PUBLIC)
-	private int targetId;
-
 	public HitsplatBuilder(Client client)
 	{
 		this.client = client;
@@ -35,7 +32,6 @@ public class HitsplatBuilder
 			packet.damage = damage;
 
 			packet.targetName = targetName;
-			packet.targetId = targetId;
 		}
 
 		return packet;

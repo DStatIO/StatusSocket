@@ -1,13 +1,12 @@
 package com.statussocket;
 
 import com.google.gson.Gson;
-import com.statussocket.data.attack.AttackBuilder;
-import com.statussocket.data.attack.AttackType;
 import com.statussocket.data.hitsplat.HitsplatBuilder;
 import com.statussocket.data.player.PlayerDataBuilder;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.client.game.ItemManager;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -20,31 +19,27 @@ public class StatusSocketClient
 {
 
 	private Client client;
+	private ItemManager itemManager;
 	private StatusSocketConfig config;
 	private OkHttpClient okClient;
 
-	public void sendAttack(String targetName, int targetId, AttackType style, int interactionId)
-	{
-		AttackBuilder builder = new AttackBuilder(client);
-		builder.setTargetName(targetName != null ? targetName : "");
-		builder.setTargetId(targetId);
-		builder.setAttackType(style);
-		builder.setInteractionId(interactionId);
-		post(builder.build());
-	}
-
-	public void sendHitsplat(int damage, String targetName, int targetId)
+	public void sendHitsplat(int damage, String targetName)
 	{
 		HitsplatBuilder builder = new HitsplatBuilder(client);
 		builder.setDamage(damage);
 		builder.setTargetName(targetName != null ? targetName : "");
-		builder.setTargetId(targetId);
 		post(builder.build());
 	}
 
 	public void sendLog()
 	{
-		PlayerDataBuilder builder = new PlayerDataBuilder(client);
+		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager);
+		post(builder.build());
+	}
+
+	public void sendLog(String targetName, boolean isAttacking)
+	{
+		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName, isAttacking);
 		post(builder.build());
 	}
 
@@ -53,7 +48,10 @@ public class StatusSocketClient
 		Gson gson = new Gson();
 		String json = gson.toJson(obj);
 
-		HttpUrl url = HttpUrl.parse(config.endpoint() + LOG_ENDPOINT);
+		// automatically include a "/" at the end of the initial endpoint URL if it wasn't included
+		String endpoint = config.endpoint().endsWith("/") ? config.endpoint() : config.endpoint() + "/";
+
+		HttpUrl url = HttpUrl.parse(endpoint + LOG_ENDPOINT);
 		MediaType mt = MediaType.parse("application/json; charset=utf-8");
 		RequestBody body = RequestBody.create(mt, json);
 
