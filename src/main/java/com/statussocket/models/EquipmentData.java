@@ -29,7 +29,6 @@ import java.util.Map;
 import lombok.Getter;
 import net.runelite.api.ItemID;
 import net.runelite.api.kit.KitType;
-import org.apache.commons.lang3.ArrayUtils;
 
 // Mostly to help fetch LMS gear stats, since LMS items are copies of real items, so their stats aren't
 // cached like most items. Each LMS item will have the 'real' itemId so the stats can be looked up.
@@ -134,7 +133,7 @@ public enum EquipmentData
 	}
 
 	// Get the saved EquipmentData for a given itemId (could be null)
-	public static EquipmentData getEquipmentDataFor(int itemId)
+	public static EquipmentData fromId(int itemId)
 	{
 		return itemData.get(itemId);
 	}
@@ -179,13 +178,13 @@ public enum EquipmentData
 		{
 			if (playerComposition == null) { return NONE; }
 
-			EquipmentData gloves = EquipmentData.getEquipmentDataFor(playerComposition[KitType.HANDS.getIndex()]);
+			EquipmentData gloves = EquipmentData.fromId(playerComposition[KitType.HANDS.getIndex()]);
 
 			if (gloves != EquipmentData.VOID_GLOVES) { return NONE; }
 
-			EquipmentData helm = EquipmentData.getEquipmentDataFor(playerComposition[KitType.HEAD.getIndex()]);
-			EquipmentData torso = EquipmentData.getEquipmentDataFor(playerComposition[KitType.TORSO.getIndex()]);
-			EquipmentData legs = EquipmentData.getEquipmentDataFor(playerComposition[KitType.LEGS.getIndex()]);
+			EquipmentData helm = EquipmentData.fromId(playerComposition[KitType.HEAD.getIndex()]);
+			EquipmentData torso = EquipmentData.fromId(playerComposition[KitType.TORSO.getIndex()]);
+			EquipmentData legs = EquipmentData.fromId(playerComposition[KitType.LEGS.getIndex()]);
 
 			if (torso == EquipmentData.VOID_BODY && legs == EquipmentData.VOID_LEGS)
 			{

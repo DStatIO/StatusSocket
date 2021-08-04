@@ -178,7 +178,7 @@ public enum AnimationData
 		DATA = builder.build();
 	}
 
-	public static AnimationData dataForAnimation(int animationId)
+	public static AnimationData fromId(int animationId)
 	{
 		return DATA.get(animationId);
 	}

@@ -12,9 +12,6 @@ public class AttackPacket
 	// If player hit another player, targetName = target player's in-game name. Else "".
 	public String targetName;
 
-	// If player hit an entity, targetId = NPC's in-game id. Else -1.
-	public int targetId;
-
 	// The animation data about the attack the player used. See @AnimationData
 	public String animationName;
 	public int animationId;

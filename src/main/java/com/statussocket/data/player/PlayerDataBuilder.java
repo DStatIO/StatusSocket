@@ -11,23 +11,27 @@ import net.runelite.http.api.item.ItemStats;
 
 public class PlayerDataBuilder
 {
+	private static Skill[] COMBAT_SKILLS = { Skill.ATTACK, Skill.STRENGTH, Skill.DEFENCE, Skill.RANGED, Skill.MAGIC, Skill.HITPOINTS, Skill.PRAYER };
+	private static String UNKNOWN_ANIMATION_STR = "N/A";
 
 	private Client client;
 	private ItemManager itemManager;
 
 	private String targetName;
-	private int targetId;
-
-
-
 	private PlayerDataPacket pdp;
 
-	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName, int targetId)
+	public PlayerDataBuilder(Client client, ItemManager itemManager)
+	{
+		this.client = client;
+		this.itemManager = itemManager;
+		this.pdp = null;
+	}
+
+	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
 		this.targetName = targetName;
-		this.targetId = targetId;
 		this.pdp = null;
 	}
 
@@ -101,9 +105,9 @@ public class PlayerDataBuilder
 		{
 			if (items[i] != null && items[i].getId() > 0)
 			{
-				// First, attempt to see if the item has a match in EquipmentData, to use a "common" name for some items with duplicates
-				// If it doesn't have a match, just use the actual item's name.
-				EquipmentData itemData = EquipmentData.getEquipmentDataFor(items[i].getId());
+				// First, attempt to see if the item has a match in EquipmentData, to use a "common" name for some items
+				// with duplicates. If it doesn't have a match, just use the actual item's name.
+				EquipmentData itemData = EquipmentData.fromId(items[i].getId());
 				String itemName = itemData != null ? itemData.name() : itemManager.getItemComposition(items[i].getId()).getName();
 
 				pdp.equipment[index] = new EquipmentPacket(i, items[i], itemName);
@@ -132,7 +136,7 @@ public class PlayerDataBuilder
 			// if that failed, then use EquipmentData to potentially get the "real" item's match.
 			if (itemStats == null)
 			{
-				EquipmentData itemData = EquipmentData.getEquipmentDataFor(itemId);
+				EquipmentData itemData = EquipmentData.fromId(itemId);
 				if (itemData != null)
 				{
 					itemId = itemData.getItemId();
@@ -156,16 +160,14 @@ public class PlayerDataBuilder
 
 	private void loadSkills()
 	{
-		Skill[] skills = Skill.values();
-		pdp.skills = new SkillPacket[skills.length];
-		for (int i = 0; i < skills.length; i++)
+		pdp.skills = new SkillPacket[COMBAT_SKILLS.length];
+		for (int i = 0; i < COMBAT_SKILLS.length; i++)
 		{
-			if (skills[i] == Skill.OVERALL) continue;
 			pdp.skills[i] = new SkillPacket();
-			pdp.skills[i].skillName = skills[i].name();
-			pdp.skills[i].experience = client.getSkillExperience(skills[i]);
-			pdp.skills[i].boostedLevel = client.getBoostedSkillLevel(skills[i]);
-			pdp.skills[i].realLevel = client.getRealSkillLevel(skills[i]);
+			pdp.skills[i].skillName = COMBAT_SKILLS[i].name();
+			pdp.skills[i].experience = client.getSkillExperience(COMBAT_SKILLS[i]);
+			pdp.skills[i].boostedLevel = client.getBoostedSkillLevel(COMBAT_SKILLS[i]);
+			pdp.skills[i].realLevel = client.getRealSkillLevel(COMBAT_SKILLS[i]);
 		}
 	}
 
@@ -233,11 +235,14 @@ public class PlayerDataBuilder
 		pdp.attack.playerName = client.getLocalPlayer().getName();
 
 		pdp.attack.targetName = targetName;
-		pdp.attack.targetId = targetId;
-
-		AnimationData animationData = AnimationData.dataForAnimation(client.getLocalPlayer().getAnimation());
+		pdp.attack.animationId = client.getLocalPlayer().getAnimation();
+		AnimationData animationData = AnimationData.fromId(client.getLocalPlayer().getAnimation());
+		if (animationData == null)
+		{
+			pdp.attack.animationName = UNKNOWN_ANIMATION_STR;
+			return;
+		}
 		pdp.attack.animationName = animationData.name();
-		pdp.attack.animationId = animationData.getAnimationId();
 		pdp.attack.animationIsSpecial = animationData.isSpecial();
 		pdp.attack.animationAttackStyle = animationData.getAttackStyle().name();
 		pdp.attack.animationBaseSpellDmg = animationData.getBaseSpellDamage();

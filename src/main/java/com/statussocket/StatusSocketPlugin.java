@@ -1,6 +1,7 @@
 package com.statussocket;
 
 import com.google.inject.Provides;
+import com.statussocket.models.AnimationData;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +77,7 @@ public class StatusSocketPlugin extends Plugin
 		if (container == client.getItemContainer(InventoryID.INVENTORY) ||
 			container == client.getItemContainer(InventoryID.EQUIPMENT))
 		{
-			slc.sendLog(null, -2);
+			slc.sendLog();
 		}
 	}
 
@@ -96,48 +97,49 @@ public class StatusSocketPlugin extends Plugin
 		if (actor instanceof Player)
 		{
 			Player target = (Player) actor;
-			slc.sendHitsplat(hitsplat.getAmount(), target.getName(), -1);
-		}
-		else if (actor instanceof NPC)
-		{
-			NPC target = (NPC) actor;
-			slc.sendHitsplat(hitsplat.getAmount(), target.getName(), target.getId());
+			slc.sendHitsplat(hitsplat.getAmount(), target.getName());
 		}
 	}
 
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		// Player does an animation targetting another entity.
+		// Player does an animation targeting another player, or gets targeted by a player.
 		Player player = client.getLocalPlayer();
 		Actor actor = event.getActor();
 
-		if (player == null || actor == null || player != actor)
+		if (player == null || !(actor instanceof Player))
 		{
 			return;
 		}
 
-		Actor target = player.getInteracting();
-		if (target == null)
+		Actor target = actor.getInteracting();
+		if (!(target instanceof Player))
 		{
 			return;
 		}
 
-		int animationId = player.getAnimation();
+		int animationId = actor.getAnimation();
 		if (animationId == -1)
 		{
 			return;
 		}
 
+		AnimationData animationData = AnimationData.fromId(animationId);
+		if (animationData == null) // disregard non-combat or unknown animations
+		{
+			return;
+		}
+
+		// the target name could be = to the player name, this would mean the main player is being attacked
+		String targetName = target.getName();
 		// delay animation processing, since we will also want to use equipment data for deserved
 		// damage, and equipment updates are loaded shortly after the animation updates.
 		// without the invokeLater, equipped gear would be 1 tick behind the animation.
 		clientThread.invokeLater(() ->
 		{
-			int targetId = (target instanceof NPC) ? ((NPC) target).getId() : -1;
-
 			// send full log including attack/animation data
-			slc.sendLog(target.getName(), targetId);
+			slc.sendLog(targetName);
 		});
 	}
 }

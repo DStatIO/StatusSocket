@@ -23,18 +23,23 @@ public class StatusSocketClient
 	private StatusSocketConfig config;
 	private OkHttpClient okClient;
 
-	public void sendHitsplat(int damage, String targetName, int targetId)
+	public void sendHitsplat(int damage, String targetName)
 	{
 		HitsplatBuilder builder = new HitsplatBuilder(client);
 		builder.setDamage(damage);
 		builder.setTargetName(targetName != null ? targetName : "");
-		builder.setTargetId(targetId);
 		post(builder.build());
 	}
 
-	public void sendLog(String targetName, int targetId)
+	public void sendLog()
 	{
-		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName, targetId);
+		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager);
+		post(builder.build());
+	}
+
+	public void sendLog(String targetName)
+	{
+		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName);
 		post(builder.build());
 	}
 
@@ -43,7 +48,10 @@ public class StatusSocketClient
 		Gson gson = new Gson();
 		String json = gson.toJson(obj);
 
-		HttpUrl url = HttpUrl.parse(config.endpoint() + LOG_ENDPOINT);
+		// automatically include a "/" at the end of the initial endpoint URL if it wasn't included
+		String endpoint = config.endpoint().endsWith("/") ? config.endpoint() : config.endpoint() + "/";
+
+		HttpUrl url = HttpUrl.parse(endpoint + LOG_ENDPOINT);
 		MediaType mt = MediaType.parse("application/json; charset=utf-8");
 		RequestBody body = RequestBody.create(mt, json);
 
