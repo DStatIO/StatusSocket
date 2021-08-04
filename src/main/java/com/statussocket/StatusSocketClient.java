@@ -37,9 +37,9 @@ public class StatusSocketClient
 		post(builder.build());
 	}
 
-	public void sendLog(String targetName)
+	public void sendLog(String targetName, boolean isAttacking)
 	{
-		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName);
+		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName, isAttacking);
 		post(builder.build());
 	}
 

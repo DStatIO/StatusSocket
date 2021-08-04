@@ -18,6 +18,8 @@ public class PlayerDataBuilder
 	private ItemManager itemManager;
 
 	private String targetName;
+	private boolean isAttacking;
+	
 	private PlayerDataPacket pdp;
 
 	public PlayerDataBuilder(Client client, ItemManager itemManager)
@@ -27,11 +29,12 @@ public class PlayerDataBuilder
 		this.pdp = null;
 	}
 
-	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName)
+	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName, boolean isAttacking)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
 		this.targetName = targetName;
+		this.isAttacking = isAttacking;
 		this.pdp = null;
 	}
 
@@ -233,8 +236,9 @@ public class PlayerDataBuilder
 		pdp.attack = new AttackPacket();
 
 		pdp.attack.playerName = client.getLocalPlayer().getName();
-
 		pdp.attack.targetName = targetName;
+		pdp.attack.isAttacking = this.isAttacking;
+
 		pdp.attack.animationId = client.getLocalPlayer().getAnimation();
 		AnimationData animationData = AnimationData.fromId(client.getLocalPlayer().getAnimation());
 		if (animationData == null)

@@ -131,15 +131,18 @@ public class StatusSocketPlugin extends Plugin
 			return;
 		}
 
-		// the target name could be = to the player name, this would mean the main player is being attacked
-		String targetName = target.getName();
+		// if the event actor is the player, then we're attacking.
+		// otherwise, the player is being attacked. so the target attacker is the event actor
+		boolean isAttacking = actor == player;
+		String targetName = (actor == player) ? target.getName() : actor.getName();
+
 		// delay animation processing, since we will also want to use equipment data for deserved
 		// damage, and equipment updates are loaded shortly after the animation updates.
 		// without the invokeLater, equipped gear would be 1 tick behind the animation.
 		clientThread.invokeLater(() ->
 		{
 			// send full log including attack/animation data
-			slc.sendLog(targetName);
+			slc.sendLog(targetName, isAttacking);
 		});
 	}
 }
