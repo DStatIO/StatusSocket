@@ -3,7 +3,6 @@ Status Socket is a plugin that sends player data to a server api. Possible uses 
 
 TODO:
 - [ ] Proxy Support.
-- [ ] Have a tick counter that keeps up with the server in order to connect animation and hitsplat data.
 
 Player Data Response(every tick): 
 ```Json
