@@ -2,10 +2,12 @@ package com.statussocket;
 
 import com.google.inject.Provides;
 import com.statussocket.models.AnimationData;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
@@ -49,6 +51,7 @@ public class StatusSocketPlugin extends Plugin
 	private OkHttpClient okClient = new OkHttpClient();
 
 	private StatusSocketClient slc;
+	private int lastTickAttacked; // last tick the client player attacked
 
 	@Provides
 	StatusSocketConfig provideConfig(final ConfigManager configManager)
@@ -77,14 +80,14 @@ public class StatusSocketPlugin extends Plugin
 		if (container == client.getItemContainer(InventoryID.INVENTORY) ||
 			container == client.getItemContainer(InventoryID.EQUIPMENT))
 		{
-			slc.sendLog();
+			slc.sendInventoryChangeLog();
 		}
 	}
 
+	// send hitsplat packet when main Player does damage to another Player
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
 	{
-		// Player does damage to another entity (either NPC or player).
 		Player player = client.getLocalPlayer();
 		Actor actor = event.getActor();
 		Hitsplat hitsplat = event.getHitsplat();
@@ -104,45 +107,78 @@ public class StatusSocketPlugin extends Plugin
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		// Player does an animation targeting another player, or gets targeted by a player.
-		Player player = client.getLocalPlayer();
-		Actor actor = event.getActor();
-
-		if (player == null || !(actor instanceof Player))
-		{
-			return;
-		}
-
-		Actor target = actor.getInteracting();
-		if (!(target instanceof Player))
-		{
-			return;
-		}
-
-		int animationId = actor.getAnimation();
-		if (animationId == -1)
-		{
-			return;
-		}
-
-		AnimationData animationData = AnimationData.fromId(animationId);
-		if (animationData == null) // disregard non-combat or unknown animations
-		{
-			return;
-		}
-
-		// if the event actor is the player, then we're attacking.
-		// otherwise, the player is being attacked. so the target attacker is the event actor
-		boolean isAttacking = actor == player;
-		String targetName = (actor == player) ? target.getName() : actor.getName();
-
 		// delay animation processing, since we will also want to use equipment data for deserved
 		// damage, and equipment updates are loaded shortly after the animation updates.
 		// without the invokeLater, equipped gear would be 1 tick behind the animation.
 		clientThread.invokeLater(() ->
 		{
-			// send full log including attack/animation data
-			slc.sendLog(targetName, isAttacking);
+			// Player does an animation targeting another player, or gets targeted by a player.
+			Player player = client.getLocalPlayer();
+			Actor actor = event.getActor();
+
+			if (player == null || !(actor instanceof Player))
+			{
+				return;
+			}
+
+			// if the event actor is the player, then we're attacking.
+			// otherwise, the player is being attacked. so the target attacker is the event actor
+			boolean isAttacking = Objects.equals(actor.getName(), player.getName());
+
+			Actor target = actor.getInteracting();
+			// make sure that the player is one of the people involved in the interaction
+			// (either attacking or being attacked)
+			// I forget why exactly use names, but it behaves more consistently than comparing the whole player object.
+			if (!(target instanceof Player) ||
+				(!isAttacking && !Objects.equals(target.getName(), player.getName()))) // basically: if !isAttacking & !isBeingAttacked
+			{
+				return;
+			}
+
+			int animationId = actor.getAnimation();
+			if (animationId == -1)
+			{
+				return;
+			}
+
+			AnimationData animationData = AnimationData.fromId(animationId);
+			if (animationData == null) // disregard non-combat or unknown animations
+			{
+				return;
+			}
+
+
+			String targetName = isAttacking ? target.getName() : actor.getName();
+
+			// if we are somehow sending more than 1 attack per tick, it has to be invalid so ignore it.
+			if (isAttacking && lastTickAttacked == client.getTickCount())
+			{
+				return;
+			}
+
+			// send combat log which will include attack/animation data
+			slc.sendCombatLog(targetName, isAttacking);
+			if (isAttacking)
+			{
+				lastTickAttacked = client.getTickCount();
+			}
 		});
+	}
+
+	// detect when any Player dies
+	@Subscribe
+	public void onActorDeath(ActorDeath event)
+	{
+		// don't really need player here, but if it's null then something wrong
+		Player player = client.getLocalPlayer();
+		Actor actor = event.getActor();
+
+		// only check Player deaths
+		if (player == null || !(actor instanceof Player))
+		{
+			return;
+		}
+
+		slc.sendDeath(actor.getName());
 	}
 }

@@ -1,6 +1,7 @@
 package com.statussocket;
 
 import com.google.gson.Gson;
+import com.statussocket.data.death.DeathBuilder;
 import com.statussocket.data.hitsplat.HitsplatBuilder;
 import com.statussocket.data.player.PlayerDataBuilder;
 import lombok.AllArgsConstructor;
@@ -31,15 +32,22 @@ public class StatusSocketClient
 		post(builder.build());
 	}
 
-	public void sendLog()
+	public void sendInventoryChangeLog()
 	{
 		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager);
 		post(builder.build());
 	}
 
-	public void sendLog(String targetName, boolean isAttacking)
+	public void sendCombatLog(String targetName, boolean isAttacking)
 	{
 		PlayerDataBuilder builder = new PlayerDataBuilder(client, itemManager, targetName, isAttacking);
+		post(builder.build());
+	}
+
+	public void sendDeath(String targetName)
+	{
+		DeathBuilder builder = new DeathBuilder(client);
+		builder.setTargetName(targetName != null ? targetName : "");
 		post(builder.build());
 	}
 

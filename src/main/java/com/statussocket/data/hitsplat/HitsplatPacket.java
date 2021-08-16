@@ -1,16 +1,13 @@
 package com.statussocket.data.hitsplat;
 
+import com.statussocket.data.PacketTypes;
+
 public class HitsplatPacket
 {
+	public String packetType = PacketTypes.hitsplat.name();
 
-	public String playerName;
-
+	public String playerName; // Name of the client player
+	public String targetName; // Name of the player being hit
 	public int damage;
-
-	// If player hits an entity, targetName = target entity's in-game name. Else "".
-	public String targetName;
-
-	// If player hits an entity, targetId = NPC's in-game id. Else -1 (hits player).
-	public int targetId;
-
+	public int tick;
 }
