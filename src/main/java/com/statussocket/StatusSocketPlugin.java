@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.client.callback.ClientThread;
@@ -72,18 +73,6 @@ public class StatusSocketPlugin extends Plugin
 
 	}
 
-	@Subscribe
-	public void onItemContainerChanged(ItemContainerChanged event)
-	{
-		// Update the status when the player changes their inventory.
-		ItemContainer container = event.getItemContainer();
-		if (container == client.getItemContainer(InventoryID.INVENTORY) ||
-			container == client.getItemContainer(InventoryID.EQUIPMENT))
-		{
-			slc.sendInventoryChangeLog();
-		}
-	}
-
 	// send hitsplat packet when main Player does damage to another Player
 	@Subscribe
 	public void onHitsplatApplied(HitsplatApplied event)
@@ -125,12 +114,18 @@ public class StatusSocketPlugin extends Plugin
 			// otherwise, the player is being attacked. so the target attacker is the event actor
 			boolean isAttacking = Objects.equals(actor.getName(), player.getName());
 
+			// attacking is now dealt with in the onGameTick event, this is only for defending
+			if (isAttacking)
+			{
+				return;
+			}
+
 			Actor target = actor.getInteracting();
 			// make sure that the player is one of the people involved in the interaction
-			// (either attacking or being attacked)
+			// (being attacked)
 			// I forget why exactly use names, but it behaves more consistently than comparing the whole player object.
 			if (!(target instanceof Player) ||
-				(!isAttacking && !Objects.equals(target.getName(), player.getName()))) // basically: if !isAttacking & !isBeingAttacked
+				(!Objects.equals(target.getName(), player.getName())))
 			{
 				return;
 			}
@@ -147,12 +142,71 @@ public class StatusSocketPlugin extends Plugin
 				return;
 			}
 
+			slc.sendCombatLog(actor.getName(), false);
+		});
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		// delay animation processing, since we will also want to use equipment data for deserved
+		// damage, and equipment updates are loaded shortly after the animation updates.
+		// without the invokeLater, equipped gear would be 1 tick behind the animation.
+		clientThread.invokeLater(() ->
+		{
+			// Player does an animation targeting another player, or gets targeted by a player.
+			Player player = client.getLocalPlayer();
+
+			if (player == null)
+			{
+				slc.sendInventoryChangeLog();
+				return;
+			}
+
+			Actor actor = player.getInteracting();
+
+			if (!(actor instanceof Player))
+			{
+				slc.sendInventoryChangeLog();
+				return;
+			}
+
+			// if the event actor is the player, then we're attacking.
+			// otherwise, the player is being attacked. so the target attacker is the event actor
+			boolean isAttacking = Objects.equals(actor.getName(), player.getName());
+
+			Actor target = actor.getInteracting();
+			// make sure that the player is one of the people involved in the interaction
+			// (either attacking or being attacked)
+			// I forget why exactly use names, but it behaves more consistently than comparing the whole player object.
+			if (!(target instanceof Player) ||
+				(!isAttacking && !Objects.equals(target.getName(), player.getName()))) // basically: if !isAttacking & !isBeingAttacked
+			{
+				slc.sendInventoryChangeLog();
+				return;
+			}
+
+			int animationId = actor.getAnimation();
+			if (animationId == -1)
+			{
+				slc.sendInventoryChangeLog();
+				return;
+			}
+
+			AnimationData animationData = AnimationData.fromId(animationId);
+			if (animationData == null) // disregard non-combat or unknown animations
+			{
+				slc.sendInventoryChangeLog();
+				return;
+			}
+
 
 			String targetName = isAttacking ? target.getName() : actor.getName();
 
 			// if we are somehow sending more than 1 attack per tick, it has to be invalid so ignore it.
 			if (isAttacking && lastTickAttacked == client.getTickCount())
 			{
+				slc.sendInventoryChangeLog();
 				return;
 			}
 
