@@ -92,7 +92,7 @@ public class StatusSocketPlugin extends Plugin
 		Actor actor = event.getActor();
 		Hitsplat hitsplat = event.getHitsplat();
 
-		if (player == null || actor == null || hitsplat == null || !hitsplat.isMine() || player == actor)
+		if (player == null || actor == null || hitsplat == null || !hitsplat.isMine() || Objects.equals(actor.getName(), player.getName()))
 		{
 			return;
 		}
