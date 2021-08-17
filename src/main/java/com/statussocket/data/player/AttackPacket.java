@@ -6,10 +6,7 @@ import lombok.Setter;
 
 public class AttackPacket
 {
-
-	public String playerName;
-
-	// If player hit another player, targetName = target player's in-game name. Else "".
+	// If player hit another player, targetName = target player's in-game name.
 	public String targetName;
 
 	public boolean isAttacking;

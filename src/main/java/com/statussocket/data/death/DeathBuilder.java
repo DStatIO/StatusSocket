@@ -1,36 +1,31 @@
-package com.statussocket.data.hitsplat;
+package com.statussocket.data.death;
 
 import lombok.AccessLevel;
 import lombok.Setter;
 import net.runelite.api.Client;
 
-public class HitsplatBuilder
+public class DeathBuilder
 {
 
 	private Client client;
-	private HitsplatPacket packet;
-
-	@Setter(AccessLevel.PUBLIC)
-	private int damage;
+	private DeathPacket packet;
 
 	@Setter(AccessLevel.PUBLIC)
 	private String targetName;
 
-	public HitsplatBuilder(Client client)
+	public DeathBuilder(Client client)
 	{
 		this.client = client;
 		this.packet = null;
 	}
 
-	public HitsplatPacket build()
+	public DeathPacket build()
 	{
 		if (packet == null)
 		{
-			packet = new HitsplatPacket();
+			packet = new DeathPacket();
 
 			packet.playerName = client.getLocalPlayer().getName();
-			packet.damage = damage;
-
 			packet.targetName = targetName;
 			packet.tick = client.getTickCount();
 		}

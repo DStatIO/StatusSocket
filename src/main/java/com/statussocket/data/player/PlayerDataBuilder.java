@@ -1,5 +1,6 @@
 package com.statussocket.data.player;
 
+import com.statussocket.data.PacketTypes;
 import com.statussocket.models.AnimationData;
 import com.statussocket.models.EquipmentData;
 import net.runelite.api.*;
@@ -19,16 +20,20 @@ public class PlayerDataBuilder
 
 	private String targetName;
 	private boolean isAttacking;
+	private String packetType;
 	
 	private PlayerDataPacket pdp;
 
+	// used for inventory update logs (no target or attacks)
 	public PlayerDataBuilder(Client client, ItemManager itemManager)
 	{
 		this.client = client;
 		this.itemManager = itemManager;
 		this.pdp = null;
+		this.packetType = PacketTypes.inventory.name();
 	}
 
+	// used for combat logs (attacker or defender)
 	public PlayerDataBuilder(Client client, ItemManager itemManager, String targetName, boolean isAttacking)
 	{
 		this.client = client;
@@ -36,6 +41,7 @@ public class PlayerDataBuilder
 		this.targetName = targetName;
 		this.isAttacking = isAttacking;
 		this.pdp = null;
+		this.packetType = isAttacking ? PacketTypes.attacking.name() : PacketTypes.defending.name();
 	}
 
 	private void loadInventory()
@@ -235,7 +241,6 @@ public class PlayerDataBuilder
 	{
 		pdp.attack = new AttackPacket();
 
-		pdp.attack.playerName = client.getLocalPlayer().getName();
 		pdp.attack.targetName = targetName;
 		pdp.attack.isAttacking = this.isAttacking;
 
@@ -258,6 +263,8 @@ public class PlayerDataBuilder
 		{
 			pdp = new PlayerDataPacket();
 
+			pdp.tick = client.getTickCount();
+			pdp.packetType = packetType != null ? packetType : PacketTypes.unknown.name();
 			pdp.playerName = client.getLocalPlayer().getName();
 			pdp.runEnergy = client.getEnergy();
 			pdp.specialAttack = client.getVar(VarPlayer.SPECIAL_ATTACK_PERCENT);
