@@ -49,7 +49,8 @@ public class StatusSocketPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
-	private OkHttpClient okClient = new OkHttpClient();
+	@Inject
+    	private OkHttpClient httpClient;
 
 	private StatusSocketClient slc;
 	private int lastTickAttacked; // last tick the client player attacked
@@ -63,7 +64,7 @@ public class StatusSocketPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		slc = new StatusSocketClient(client, itemManager, config, okClient);
+		slc = new StatusSocketClient(client, itemManager, config, httpClient);
 	}
 
 
