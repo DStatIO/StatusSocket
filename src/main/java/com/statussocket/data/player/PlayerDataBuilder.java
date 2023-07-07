@@ -267,7 +267,7 @@ public class PlayerDataBuilder
 			pdp.packetType = packetType != null ? packetType : PacketTypes.unknown.name();
 			pdp.playerName = client.getLocalPlayer().getName();
 			pdp.runEnergy = client.getEnergy();
-			pdp.specialAttack = client.getVar(VarPlayer.SPECIAL_ATTACK_PERCENT);
+			pdp.specialAttack = client.getVarbitValue(VarPlayer.SPECIAL_ATTACK_PERCENT);
 
 			loadInventory();
 			loadEquipment();
