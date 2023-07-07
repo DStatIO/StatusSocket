@@ -1,5 +1,6 @@
 package com.statussocket;
 
+import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.statussocket.models.AnimationData;
 import java.util.Objects;
@@ -31,6 +32,11 @@ import javax.inject.Inject;
 )
 public class StatusSocketPlugin extends Plugin
 {
+	@Inject
+	private OkHttpClient httpClient;
+
+	@Inject
+	private Gson gson;
 
 	@Inject
 	@Getter(AccessLevel.PUBLIC)
@@ -49,9 +55,6 @@ public class StatusSocketPlugin extends Plugin
 	@Inject
 	private ItemManager itemManager;
 
-	@Inject
-    	private OkHttpClient httpClient;
-
 	private StatusSocketClient slc;
 	private int lastTickAttacked; // last tick the client player attacked
 
@@ -64,7 +67,7 @@ public class StatusSocketPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		slc = new StatusSocketClient(client, itemManager, config, httpClient);
+		slc = new StatusSocketClient(client, httpClient, gson, itemManager, config);
 	}
 
 
