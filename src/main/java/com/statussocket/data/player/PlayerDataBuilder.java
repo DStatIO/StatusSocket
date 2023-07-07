@@ -12,7 +12,7 @@ import net.runelite.http.api.item.ItemStats;
 
 public class PlayerDataBuilder
 {
-	private static Skill[] COMBAT_SKILLS = { Skill.ATTACK, Skill.STRENGTH, Skill.DEFENCE, Skill.RANGED, Skill.MAGIC, Skill.HITPOINTS, Skill.PRAYER, Skill.OVERALL };
+	private static Skill[] COMBAT_SKILLS = { Skill.ATTACK, Skill.STRENGTH, Skill.DEFENCE, Skill.RANGED, Skill.MAGIC, Skill.HITPOINTS, Skill.PRAYER };
 	private static String UNKNOWN_ANIMATION_STR = "N/A";
 
 	private Client client;
@@ -267,7 +267,7 @@ public class PlayerDataBuilder
 			pdp.packetType = packetType != null ? packetType : PacketTypes.unknown.name();
 			pdp.playerName = client.getLocalPlayer().getName();
 			pdp.runEnergy = client.getEnergy();
-			pdp.specialAttack = client.getVar(VarPlayer.SPECIAL_ATTACK_PERCENT);
+			pdp.specialAttack = client.getVarbitValue(VarPlayer.SPECIAL_ATTACK_PERCENT);
 
 			loadInventory();
 			loadEquipment();

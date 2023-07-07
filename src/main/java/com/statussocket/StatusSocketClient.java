@@ -1,6 +1,7 @@
 package com.statussocket;
 
 import com.google.gson.Gson;
+import javax.inject.Inject;
 import com.statussocket.data.death.DeathBuilder;
 import com.statussocket.data.hitsplat.HitsplatBuilder;
 import com.statussocket.data.player.PlayerDataBuilder;
@@ -19,10 +20,17 @@ import static com.statussocket.StatusSocketEndpoints.LOG_ENDPOINT;
 public class StatusSocketClient
 {
 
-	private Client client;
+	@Inject
+    	private Client client;
+
+	@Inject
+    	private OkHttpClient httpClient;
+	
+	@Inject
+	private Gson gson;
+
 	private ItemManager itemManager;
 	private StatusSocketConfig config;
-	private OkHttpClient okClient;
 
 	public void sendHitsplat(int damage, String targetName)
 	{
@@ -53,7 +61,7 @@ public class StatusSocketClient
 
 	private void post(Object obj)
 	{
-		Gson gson = new Gson();
+		Gson gson = this.gson.newBuilder().serializeNulls().create();
 		String json = gson.toJson(obj);
 
 		// automatically include a "/" at the end of the initial endpoint URL if it wasn't included
@@ -64,18 +72,20 @@ public class StatusSocketClient
 		RequestBody body = RequestBody.create(mt, json);
 
 		Request request = new Request.Builder().url(url).post(body).build();
-		okClient.newCall(request).enqueue(new Callback()
+		httpClient.newCall(request).enqueue(new Callback()
 		{
 			@Override
 			public void onFailure(Call call, IOException e)
 			{
-				log.warn("Failure");
+				if(config.enableLogs())
+					log.warn("httpClient failure " + e.getMessage().toString());
 			}
 
 			@Override
 			public void onResponse(Call call, Response response) throws IOException
 			{
-				log.info("Code: {} - Response: {}", response.code(), response.body().string());
+				if(config.enableLogs())
+					log.info("Code: {} - Response: {}", response.code(), response.body().string());
 				response.close();
 			}
 		});

@@ -28,4 +28,15 @@ public interface StatusSocketConfig extends Config
 		return "http://localhost/";
 	}
 
+	@ConfigItem(
+			name = "EnableLogs",
+			description = "Enable logging HTTP responses",
+			position = 3,
+			keyName = "enableLogs",
+			section = "serverTitle"
+	)
+	default boolean enableLogs()
+	{
+		return false;
+	}
 }
