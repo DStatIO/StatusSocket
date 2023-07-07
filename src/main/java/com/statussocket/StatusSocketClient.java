@@ -19,10 +19,17 @@ import static com.statussocket.StatusSocketEndpoints.LOG_ENDPOINT;
 public class StatusSocketClient
 {
 
-	private Client client;
+	@Inject
+    	private Client client;
+
+	@Inject
+    	private OkHttpClient httpClient;
+	
+	@Inject
+	private Gson gson;
+
 	private ItemManager itemManager;
 	private StatusSocketConfig config;
-	private OkHttpClient okClient;
 
 	public void sendHitsplat(int damage, String targetName)
 	{
@@ -53,7 +60,7 @@ public class StatusSocketClient
 
 	private void post(Object obj)
 	{
-		Gson gson = new Gson();
+		Gson gson = gson.newBuilder().serializeNulls().create();
 		String json = gson.toJson(obj);
 
 		// automatically include a "/" at the end of the initial endpoint URL if it wasn't included
@@ -64,7 +71,7 @@ public class StatusSocketClient
 		RequestBody body = RequestBody.create(mt, json);
 
 		Request request = new Request.Builder().url(url).post(body).build();
-		okClient.newCall(request).enqueue(new Callback()
+		httpClient.newCall(request).enqueue(new Callback()
 		{
 			@Override
 			public void onFailure(Call call, IOException e)
