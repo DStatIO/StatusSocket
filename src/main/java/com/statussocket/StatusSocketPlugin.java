@@ -27,8 +27,7 @@ import javax.inject.Inject;
 @PluginDescriptor(
 	name = "Status Socket",
 	description = "Actively logs the player status to a remote server.",
-	tags = {"status", "socket"},
-	enabledByDefault = false
+	tags = {"status", "socket"}
 )
 public class StatusSocketPlugin extends Plugin
 {
