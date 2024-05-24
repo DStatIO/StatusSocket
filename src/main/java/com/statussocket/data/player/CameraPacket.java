@@ -10,8 +10,4 @@ public class CameraPacket
 	public int y;
 	public int z;
 
-	public int x2;
-	public int y2;
-	public int z2;
-
 }
