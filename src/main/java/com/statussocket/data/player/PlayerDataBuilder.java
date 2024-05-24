@@ -231,10 +231,6 @@ public class PlayerDataBuilder
 		pdp.camera.y = client.getCameraY();
 		pdp.camera.z = client.getCameraZ();
 
-		pdp.camera.x2 = client.getCameraX2();
-		pdp.camera.y2 = client.getCameraY2();
-		pdp.camera.z2 = client.getCameraZ2();
-
 	}
 
 	private void loadAttack()
